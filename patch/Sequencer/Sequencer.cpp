@@ -67,7 +67,6 @@ void UpdateControls()
                                      : trigs[menuPos % 5];
         }
     }
-
     else
     {
         values[menuPos] += patch.encoder.Increment();

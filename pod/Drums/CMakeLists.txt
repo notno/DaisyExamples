@@ -1,0 +1,45 @@
+# pod/Drums/CMakeLists.txt
+
+cmake_minimum_required(VERSION 3.20)
+project(Drums LANGUAGES C CXX)
+
+# Specify the linker script path relative to the project root
+set(LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/libDaisy/core/STM32H750IB_flash.lds")
+
+# Create the executable (this will produce the .elf)
+add_executable(Drums
+        Drums.cpp
+        # Add other source files here if necessary
+)
+
+# Link against libDaisy and DaisySP
+target_link_libraries(Drums
+        PRIVATE
+        daisy
+        DaisySP
+)
+
+# Specify linker options, including the linker script
+target_link_options(Drums PRIVATE
+        "-Wl,--gc-sections"
+        "-T${LINKER_SCRIPT}"
+)
+
+# Define where the .bin will be generated
+set(EUCLIDEANDRUMS2_ELF $<TARGET_FILE:Drums>)
+set(EUCLIDEANDRUMS2_BIN "${CMAKE_CURRENT_BINARY_DIR}/Drums.bin")
+
+# Custom command to convert .elf to .bin using objcopy
+add_custom_command(
+        OUTPUT ${EUCLIDEANDRUMS2_BIN}
+        COMMAND arm-none-eabi-objcopy -O binary ${EUCLIDEANDRUMS2_ELF} ${EUCLIDEANDRUMS2_BIN}
+        DEPENDS Drums
+        COMMENT "Converting ELF to BIN for Drums"
+)
+
+# Custom target to program the device via DFU
+add_custom_target(drums-dfu
+        COMMAND dfu-util -a 0 -s 0x08000000:leave -D ${EUCLIDEANDRUMS2_BIN} -d ,0483:df11
+        DEPENDS ${EUCLIDEANDRUMS2_BIN}
+        COMMENT "Flashing Drums.bin via DFU"
+)
