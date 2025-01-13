@@ -2,6 +2,36 @@
 #include "daisy_patch.h"
 #include <string>
 
+
+/*
+ * _sbrk
+ *
+ */
+extern "C" {
+    // The start and end of the heap area
+    extern char _end;  // Defined in linker script
+    extern char _estack;  // Defined in linker script
+    static char* heap_end = &_end;
+
+    // Implementation of _sbrk
+    void* _sbrk(int incr) {
+        char* prev_heap_end = heap_end;
+        char* stack = reinterpret_cast<char*>(&_estack);
+
+        if (heap_end + incr > stack) {
+            // Not enough memory
+            return reinterpret_cast<void*>(-1);
+        }
+
+        heap_end += incr;
+        return prev_heap_end;
+    }
+}
+
+
+/*
+ *
+ */
 using namespace daisy;
 using namespace daisysp;
 
