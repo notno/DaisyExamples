@@ -7,14 +7,15 @@ ENTRY(Reset_Handler)
 
 MEMORY
 {
-	FLASH (RX)    : ORIGIN = 0x08000000, LENGTH = 128K
-	DTCMRAM (RWX) : ORIGIN = 0x20000000, LENGTH = 128K
-	SRAM (RWX)    : ORIGIN = 0x24000000, LENGTH = 512K
-	RAM_D2 (RWX)  : ORIGIN = 0x30000000, LENGTH = 288K
-	RAM_D3 (RWX)  : ORIGIN = 0x38000000, LENGTH = 64K
-	ITCMRAM (RWX) : ORIGIN = 0x00000000, LENGTH = 64K
-	SDRAM (RWX)   : ORIGIN = 0xc0000000, LENGTH = 64M
-    QSPIFLASH (RX)  : ORIGIN = 0x90000000, LENGTH = 8M
+	FLASH       (RX)  : ORIGIN = 0x08000000, LENGTH = 128K
+	DTCMRAM     (RWX) : ORIGIN = 0x20000000, LENGTH = 128K
+	SRAM        (RWX) : ORIGIN = 0x24000000, LENGTH = 512K
+	RAM_D2      (RWX) : ORIGIN = 0x30000000, LENGTH = 288K
+	RAM_D3      (RWX) : ORIGIN = 0x38000000, LENGTH = 64K
+	BACKUP_SRAM (RWX) : ORIGIN = 0x38800000, LENGTH = 4K
+	ITCMRAM     (RWX) : ORIGIN = 0x00000000, LENGTH = 64K
+	SDRAM       (RWX) : ORIGIN = 0xc0000000, LENGTH = 64M
+	QSPIFLASH   (RX)  : ORIGIN = 0x90000000, LENGTH = 8M
 }
 
 _estack = 0x20020000;
@@ -107,7 +108,7 @@ SECTIONS
 
 	_sidata = LOADADDR(.data);
 
-	.bss :
+	.bss (NOLOAD) :
 	{
 		. = ALIGN(4);
 		_sbss = .;
@@ -122,7 +123,9 @@ SECTIONS
 		PROVIDE(__bss_end__ = _ebss);
 	} > SRAM
 
-	.dtcmram_bss :
+	PROVIDE(end = .);
+
+	.dtcmram_bss (NOLOAD) :
 	{
 		. = ALIGN(4);
 		_sdtcmram_bss = .;
@@ -130,14 +133,13 @@ SECTIONS
 		PROVIDE(__dtcmram_bss_start__ = _sdtcmram_bss);
 		*(.dtcmram_bss)
 		*(.dtcmram_bss*)
-		*(COMMON)
 		. = ALIGN(4);
 		_edtcmram_bss = .;
 
 		PROVIDE(__dtcmram_bss_end__ = _edtcmram_bss);
 	} > DTCMRAM
 
-	.sram1_bss :
+	.sram1_bss (NOLOAD) :
 	{
 		. = ALIGN(4);
 		_ssram1_bss = .;
@@ -145,13 +147,13 @@ SECTIONS
 		PROVIDE(__sram1_bss_start__ = _sram1_bss);
 		*(.sram1_bss)
 		*(.sram1_bss*)
-		*(COMMON)
 		. = ALIGN(4);
 		_esram1_bss = .;
 
 		PROVIDE(__sram1_bss_end__ = _esram1_bss);
 	} > RAM_D2
 
+	/*
 	.sdram_text :
 	{
 		. = ALIGN(4);
@@ -166,6 +168,7 @@ SECTIONS
 		PROVIDE(__sdram_text_end = _esdram_text);
 	} > SDRAM AT >FLASH
 	_sisdram_text = LOADADDR(.sdram_text);
+	*/
 
 	.sdram_bss (NOLOAD) :
 	{
@@ -181,9 +184,21 @@ SECTIONS
 		PROVIDE(__sdram_bss_end = _esdram_bss);
 	} > SDRAM
 
-	PROVIDE(end = .);
+		.backup_sram (NOLOAD) :
+	{
+		. = ALIGN(4);
+		_sbackup_sram = .;
 
-    .qspiflash_text :
+		PROVIDE(__backup_sram_start = _sbackup_sram);
+		*(.backup_sram)
+		*(.backup_sram*)
+		. = ALIGN(4);
+		_ebackup_sram = .;
+
+		PROVIDE(__backup_sram_end = _ebackup_sram);
+	} > BACKUP_SRAM
+
+	.qspiflash_text :
 	{
 		. = ALIGN(4);
 		_sqspiflash_text = .;
@@ -243,6 +258,13 @@ SECTIONS
 		PROVIDE(__reserved_for_stack_end__ = .);
 	} > SRAM
 
+    DISCARD :
+    {
+        libc.a ( * )
+        libm.a ( * )
+        libgcc.a ( * )
+    }
+
     /* Define _end symbol */
     _end = .;
 
@@ -251,5 +273,6 @@ SECTIONS
     {
         KEEP(*(.dfu_suffix))
     } > FLASH
+
 }
 

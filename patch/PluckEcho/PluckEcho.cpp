@@ -13,10 +13,11 @@ using namespace daisysp;
 DaisyPatch hw;
 
 // Synthesis
-PolyPluck<NUM_VOICES> synth;
+StringVoice synth;
+// PolyPluck<NUM_VOICES> synth;
 // 10 second delay line on the external SDRAM
 DelayLine<float, MAX_DELAY> DSY_SDRAM_BSS delay;
-ReverbSc                                  verb;
+// ReverbSc                                  verb;
 
 // Persistent filtered Value for smooth delay time changes.
 float smooth_time;
@@ -51,7 +52,7 @@ void AudioCallback(AudioHandle::InputBuffer  in,
 
     // Read knobs for decay;
     decay = 0.5f + (hw.GetKnobValue(DaisyPatch::CTRL_2) * 0.5f);
-    synth.SetDecay(decay);
+    synth.SetDamping(decay);
 
     // Get Delay Parameters from knobs.
     kval    = hw.GetKnobValue(DaisyPatch::CTRL_3);
@@ -66,16 +67,16 @@ void AudioCallback(AudioHandle::InputBuffer  in,
         delay.SetDelay(smooth_time);
 
         // Synthesize Plucks
-        sig = synth.Process(trig, nn);
+        sig = synth.Process(trig);
 
         //		// Handle Delay
         delsig = delay.Read();
         delay.Write(sig + (delsig * delfb));
 
-        // Create Reverb Send
-        dry  = sig + delsig;
-        send = dry * 0.6f;
-        verb.Process(send, send, &wetl, &wetr);
+        // // Create Reverb Send
+        // dry  = sig + delsig;
+        // send = dry * 0.6f;
+        // verb.Process(send, send, &wetl, &wetr);
 
         // Output
         out_left[i]  = dry + wetl;
@@ -102,9 +103,9 @@ int main(void)
     delay.Init();
     delay.SetDelay(samplerate * 0.8f); // half second delay
 
-    verb.Init(samplerate);
-    verb.SetFeedback(0.85f);
-    verb.SetLpFreq(2000.0f);
+    // verb.Init(samplerate);
+    // verb.SetFeedback(0.85f);
+    // verb.SetLpFreq(2000.0f);
 
     // Start the ADC and Audio Peripherals on the Hardware
     hw.StartAdc();

@@ -14,6 +14,8 @@ add_subdirectory(pod/EuclideanDrums2)
 add_subdirectory(pod/Drums)
 add_subdirectory(patch/Sequencer)
 add_subdirectory(patch/Noise)
+add_subdirectory(patch/PluckEcho)
+add_subdirectory(patch/EnvelopeOscillator)
 
 # Define common compiler flags
 set(COMMON_C_FLAGS
